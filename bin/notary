@@ -14,7 +14,7 @@
 
 var fs = require('fs');
 var vfs = require('vinyl-fs');
-var notary = require('./index');
+var notary = require('../index');
 
 var bannerFile = process.argv[2];
 
