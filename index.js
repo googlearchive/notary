@@ -41,6 +41,7 @@ function addBanner(content) {
 function addBannerHTML(content) {
   var lines = content.split(EOL);
   var docTypeLoc = 0;
+  // insert license comment after doctype
   var doctypeSearch = /<!\s*doctype/i;
   for (var i = 0; i < lines.length; i++) {
     if (doctypeSearch.test(lines[i])) {
