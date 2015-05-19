@@ -1,5 +1,5 @@
 {
-  "name": "dmv",
+  "name": "notary",
   "version": "1.0.0",
   "description": "Give your files a license",
   "main": "index.js",
@@ -18,5 +18,16 @@
   "devDependencies": {
     "chai": "^2.3.0",
     "mocha": "^2.2.5"
-  }
+  },
+  "directories": {
+    "example": "examples"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PolymerLabs/notary.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PolymerLabs/notary/issues"
+  },
+  "homepage": "https://github.com/PolymerLabs/notary#readme"
 }
