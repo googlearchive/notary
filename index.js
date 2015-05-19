@@ -10,35 +10,22 @@
 // jshint node: true
 
 'use strict';
-var path = require('path');
-var fs = require('vinyl-fs');
 var map = require('map-stream');
+var path = require('path');
 var EOL = require('os').EOL;
 
 var LINE_SEARCH = 5;
-
-var bannerFile = process.argv[2];
-
-if (!bannerFile) {
-  throw 'provide banner file!';
-}
-
-var banner = require('fs').readFileSync(bannerFile, 'utf-8');
-
-if (!hasLicense(banner)) {
-  throw 'Banner file needs @license!';
-}
 
 function hasLicense(content) {
   var lines = content.split(EOL);
   return lines.slice(0, LINE_SEARCH).join(EOL).indexOf('@license') > -1;
 }
 
-function addBanner(content) {
-  return banner + EOL + content;
+function addLicense(header, content) {
+  return header + EOL + content;
 }
 
-function addBannerHTML(content) {
+function addLicenseHTML(header, content) {
   var lines = content.split(EOL);
   var docTypeLoc = 0;
   // insert license comment after doctype
@@ -49,24 +36,42 @@ function addBannerHTML(content) {
       break;
     }
   }
-  lines.splice(docTypeLoc, 0, '<!--', banner + '-->');
+  lines.splice(docTypeLoc, 0, '<!--', header + '-->');
   return lines.join(EOL);
 }
 
-fs.src('{.,test}/*.{js,html,css}')
-.pipe(map(function(file, cb) {
-  var content = file.contents.toString();
-  var extname = path.extname(file.path);
-  if (!hasLicense(content)) {
-    if (extname === '.html') {
-      content = addBannerHTML(content);
-    } else {
-      content = addBanner(content);
-    }
-    file.contents = new Buffer(content);
-    cb(null, file);
-  } else {
-    cb();
+function notarize(opts) {
+  opts = opts || {};
+  var header = opts.header || '';
+  if (!header) {
+    throw 'header needed!';
   }
-}))
-.pipe(fs.dest('.'));
+  if (!hasLicense(header)) {
+    throw 'header needs @license';
+  }
+  return map(function(file, cb) {
+
+    if (file.isNull()) {
+      return cb(null, file);
+    }
+    if (file.isStream()) {
+      return cb(new Error('streams not supported!'));
+    }
+    var content = file.contents.toString();
+    var extname = path.extname(file.path);
+    if (!hasLicense(content)) {
+      if (extname === '.html') {
+        content = addLicenseHTML(header, content);
+      } else {
+        content = addLicense(header, content);
+      }
+      file.contents = new Buffer(content);
+    }
+    cb(null, file);
+  });
+}
+
+module.exports = notarize;
+module.exports.hasLicense = hasLicense;
+module.exports.addLicense = addLicense;
+module.exports.addLicenseHTML = addLicenseHTML;

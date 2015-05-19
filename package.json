@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Give your files a license",
   "main": "index.js",
+  "bin": {
+    "notary": "notary.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -1,0 +1,35 @@
+#!/usr/bin/env node
+/**
+ * @license
+ * Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
+ * This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+ * The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+ * The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+ * Code distributed by Google as part of the polymer project is also
+ * subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+ */
+// jshint node: true
+
+'use strict';
+
+var fs = require('fs');
+var vfs = require('vinyl-fs');
+var notary = require('./index');
+
+var bannerFile = process.argv[2];
+
+if (!bannerFile) {
+  throw 'no header file provided!';
+}
+
+fs.readFile(bannerFile, 'utf-8', function(err, content) {
+  if (err) {
+    throw err;
+  }
+  vfs.src(['**/*.{css,js,html}', '!{node_modules,bower_components}/**'])
+  .pipe(notary({
+    header: content
+  }))
+  .pipe(vfs.dest('.'))
+  ;
+});
