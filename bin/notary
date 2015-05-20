@@ -31,5 +31,8 @@ fs.readFile(bannerFile, 'utf-8', function(err, content) {
     header: content
   }))
   .pipe(vfs.dest('.'))
+  .on('error', function(err) {
+    throw err;
+  })
   ;
 });

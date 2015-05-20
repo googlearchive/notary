@@ -12,6 +12,7 @@
 'use strict';
 var map = require('map-stream');
 var path = require('path');
+var PluginError = require('plugin-error');
 var EOL = require('os').EOL;
 
 var LINE_SEARCH = 5;
@@ -21,33 +22,43 @@ function hasLicense(content) {
   return lines.slice(0, LINE_SEARCH).join(EOL).indexOf('@license') > -1;
 }
 
-function addLicense(header, content) {
-  return header + EOL + content;
+function split(content) {
+  return content.split(EOL);
 }
 
-function addLicenseHTML(header, content) {
-  var lines = content.split(EOL);
-  var docTypeLoc = 0;
-  // insert license comment after doctype
-  var doctypeSearch = /<!\s*doctype/i;
+function join(lines) {
+  return lines.join(EOL);
+}
+
+function findLocation(lines, regex) {
   for (var i = 0; i < lines.length; i++) {
-    if (doctypeSearch.test(lines[i])) {
-      docTypeLoc = i + 1;
-      break;
+    if (regex.test(lines[i])) {
+      return i + 1;
     }
   }
+  return 0;
+}
+
+function addLicense(header, lines) {
+  // insert license after #!
+  var shabangLoc = findLocation(lines, /^#!/);
+  lines.splice(shabangLoc, 0, '/**', header, '*/');
+}
+
+function addLicenseHTML(header, lines) {
+  // insert license comment after doctype
+  var docTypeLoc = findLocation(lines, /^<!\s*doctype/i);
   lines.splice(docTypeLoc, 0, '<!--', header + '-->');
-  return lines.join(EOL);
 }
 
 function notarize(opts) {
   opts = opts || {};
   var header = opts.header || '';
   if (!header) {
-    throw 'header needed!';
+    throw new PluginError('notary', 'header needed!');
   }
   if (!hasLicense(header)) {
-    throw 'header needs @license';
+    throw new PluginError('notary', 'header needs @license');
   }
   return map(function(file, cb) {
 
@@ -55,17 +66,18 @@ function notarize(opts) {
       return cb(null, file);
     }
     if (file.isStream()) {
-      return cb(new Error('streams not supported!'));
+      return cb(new PluginError('notary', 'streams not supported!'));
     }
-    var content = file.contents.toString();
-    var extname = path.extname(file.path);
+    var content = String(file.contents);
     if (!hasLicense(content)) {
+      var lines = split(content);
+      var extname = path.extname(file.path);
       if (extname === '.html') {
-        content = addLicenseHTML(header, content);
+        addLicenseHTML(header, lines);
       } else {
-        content = addLicense(header, content);
+        addLicense(header, lines);
       }
-      file.contents = new Buffer(content);
+      file.contents = new Buffer(join(lines));
     }
     cb(null, file);
   });
